@@ -1608,6 +1608,7 @@ var Emotion = /* @__PURE__ */ withEmotionCache(function(props, cache, ref) {
   }), /* @__PURE__ */ reactExports.createElement(WrappedComponent, newProps));
 });
 var Emotion$1 = Emotion;
+var Fragment = jsxRuntimeExports.Fragment;
 var jsx$1 = function jsx(type, props, key) {
   if (!hasOwn.call(props, "css")) {
     return jsxRuntimeExports.jsx(type, props, key);
@@ -9116,21 +9117,12 @@ const ProductContainerLayout = css`
   justify-content: space-between;
   grid-template-columns: repeat(2, auto);
 `;
-const loadingLayout = css`
-  display: grid;
-  grid-column: span 2;
-  width: 100%;
-  text-align: center;
-  font-size: 30px;
-  font-weight: 500;
-`;
 function ProductContainer({
   products,
   cartItemList,
   onChange
 }) {
-  console.log(products);
-  return /* @__PURE__ */ jsx$1("div", { css: ProductContainerLayout, children: products.length === 0 ? /* @__PURE__ */ jsx$1("div", { css: loadingLayout, children: "로딩중입니다" }) : products.map((product) => {
+  return /* @__PURE__ */ jsx$1("div", { css: ProductContainerLayout, children: products.map((product) => {
     const selectedCardItems = cartItemList.filter(
       (cartItem) => Number(product.id) === cartItem.product.id
     );
@@ -9334,6 +9326,14 @@ const cartItemCount = css`
   width: 19px;
   height: 19px;
 `;
+const loadingLayout = css`
+  display: grid;
+  grid-column: span 2;
+  width: 100%;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 500;
+`;
 function ShopPage() {
   const [categoryValue, setCategoryValue] = reactExports.useState("전체");
   const [filterValue, setFilterValue] = reactExports.useState("낮은 가격순");
@@ -9392,7 +9392,7 @@ function ShopPage() {
       ] }),
       isError && /* @__PURE__ */ jsx$1(Toast, { children: "오류가 발생했습니다. 잠시 후 다시 시도해 주세요." })
     ] }),
-    /* @__PURE__ */ jsxs(Body, { children: [
+    /* @__PURE__ */ jsx$1(Body, { children: productList.length !== 0 ? /* @__PURE__ */ jsxs(Fragment, { children: [
       /* @__PURE__ */ jsx$1(TitleContainer, { title: "bpple 상품 목록", children: /* @__PURE__ */ jsxs("div", { css: selectorBoxLayout, children: [
         /* @__PURE__ */ jsx$1(
           Selector,
@@ -9419,7 +9419,7 @@ function ShopPage() {
           onChange: updateCardItemList
         }
       )
-    ] })
+    ] }) : /* @__PURE__ */ jsx$1("div", { css: loadingLayout, children: "로딩중입니다" }) })
   ] });
 }
 const reset = css`
