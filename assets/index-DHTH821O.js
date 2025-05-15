@@ -8941,6 +8941,7 @@ const bodyLayout = css`
   padding: 36px 25px;
   box-sizing: border-box;
   gap: 28px;
+  min-height: 100vh;
 `;
 function Body({ children }) {
   return /* @__PURE__ */ jsx$1("body", { css: bodyLayout, children });
