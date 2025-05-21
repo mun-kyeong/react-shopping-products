@@ -8913,16 +8913,62 @@ function css() {
   }
   return serializeStyles(args);
 }
-async function getProduct({
+const getRequestOptions = ({
+  method,
+  withAuth = false,
+  body
+}) => {
+  const headers = {
+    "Content-Type": "application/json"
+  };
+  if (withAuth)
+    headers["Authorization"] = `Basic ${"bXVuLWt5ZW9uZzpwYXNzd29yZA"}==`;
+  const options = {
+    method,
+    headers
+  };
+  if (body)
+    options.body = JSON.stringify(body);
+  return options;
+};
+async function getCartItems({ sortBy }) {
+  const options = getRequestOptions({ method: "GET", withAuth: true });
+  const params = new URLSearchParams({
+    page: "0",
+    size: "50",
+    sort: sortBy
+  });
+  return fetch(
+    `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items?${params.toString()}`,
+    options
+  ).then((res) => res.json());
+}
+async function postCartItem({
+  productId,
+  quantity
+}) {
+  const options = getRequestOptions({
+    method: "POST",
+    body: {
+      productId,
+      quantity
+    },
+    withAuth: true
+  });
+  return fetch(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items`, options);
+}
+async function deleteCartItem({ id: id2 }) {
+  const options = getRequestOptions({
+    method: "DELETE",
+    withAuth: true
+  });
+  return fetch(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items/${id2}`, options);
+}
+async function getProducts({
   sortBy,
   category
 }) {
-  const options = {
-    method: "GET",
-    headers: {
-      accept: "application/json"
-    }
-  };
+  const options = getRequestOptions({ method: "GET" });
   const params = new URLSearchParams({
     page: "0",
     size: "20",
@@ -8933,18 +8979,6 @@ async function getProduct({
     `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/products?${category !== "전체" && `${categoryParams.toString()}&&`}${params.toString()}`,
     options
   ).then((res) => res.json());
-}
-const bodyLayout = css`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 36px 25px;
-  box-sizing: border-box;
-  gap: 28px;
-  min-height: 100vh;
-`;
-function Body({ children }) {
-  return /* @__PURE__ */ jsx$1("body", { css: bodyLayout, children });
 }
 const headerLayout = css`
   position: relative;
@@ -8961,52 +8995,8 @@ const headerLayout = css`
   font-size: 20px;
   font-weight: 800;
 `;
-function Header({ title, children }) {
-  return /* @__PURE__ */ jsxs("header", { css: headerLayout, children: [
-    title,
-    children
-  ] });
-}
-async function getCartItem({ sortBy }) {
-  const options = {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${"bXVuLWt5ZW9uZzpwYXNzd29yZA"}==`
-    }
-  };
-  const params = new URLSearchParams({
-    page: "0",
-    size: "50",
-    sort: sortBy
-  });
-  return fetch(
-    `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items?${params.toString()}`,
-    options
-  ).then((res) => res.json());
-}
-async function postCartItem({ productId, quantity }) {
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${"bXVuLWt5ZW9uZzpwYXNzd29yZA"}==`
-    },
-    body: JSON.stringify({
-      productId,
-      quantity
-    })
-  };
-  return fetch(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items`, options);
-}
-async function deleteCartItem({ id: id2 }) {
-  const options = {
-    method: "DELETE",
-    headers: {
-      Authorization: `Basic ${"bXVuLWt5ZW9uZzpwYXNzd29yZA"}==`
-    }
-  };
-  return fetch(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items/${id2}`, options);
+function Header({ children }) {
+  return /* @__PURE__ */ jsx$1("header", { css: headerLayout, children });
 }
 const buttonLayout = (backgroundColor, color) => {
   return css`
@@ -9027,13 +9017,24 @@ function Button({
   children,
   style = "primary"
 }) {
-  let backgroundColor = "#000000";
-  let color = "#FFFFFF";
-  if (style === "secondary") {
-    backgroundColor = "#EAEAEA";
-    color = "#000000";
-  }
-  return /* @__PURE__ */ jsx$1("button", { css: buttonLayout(backgroundColor, color), onClick, children });
+  const colorVariant = {
+    primary: { backgroundColor: "#000000", color: "#FFFFFF" },
+    secondary: {
+      backgroundColor: "#EAEAEA",
+      color: "#000000"
+    }
+  };
+  return /* @__PURE__ */ jsx$1(
+    "button",
+    {
+      css: buttonLayout(
+        colorVariant[style].backgroundColor,
+        colorVariant[style].color
+      ),
+      onClick,
+      children
+    }
+  );
 }
 const productLayout = css`
   display: flex;
@@ -9079,24 +9080,25 @@ function Product({
   imageUrl,
   name,
   price,
-  selectedCardItems,
+  selectedCartItems,
   onChange
 }) {
-  const isSelected = selectedCardItems.length !== 0;
-  const handleClick = async () => {
-    if (isSelected)
-      await deleteCartItem({ id: Number(selectedCardItems[0].id) });
-    else
+  const isSelected = selectedCartItems.length !== 0;
+  const AddToCartButton = () => {
+    const handleClick = async () => {
       await postCartItem({ productId: Number(id2), quantity: 1 });
-    onChange();
-  };
-  const addProduct = () => {
+      onChange();
+    };
     return /* @__PURE__ */ jsxs(Button, { onClick: handleClick, children: [
       /* @__PURE__ */ jsx$1("img", { src: "./add-shopping-cart.svg" }),
       /* @__PURE__ */ jsx$1("p", { children: "담기" })
     ] });
   };
-  const removeProduct = () => {
+  const RemoveFromCartButton = () => {
+    const handleClick = async () => {
+      await deleteCartItem({ id: Number(selectedCartItems[0].id) });
+      onChange();
+    };
     return /* @__PURE__ */ jsxs(Button, { onClick: handleClick, style: "secondary", children: [
       /* @__PURE__ */ jsx$1("img", { src: "./remove-shopping-cart.svg" }),
       /* @__PURE__ */ jsx$1("p", { children: "빼기" })
@@ -9109,7 +9111,7 @@ function Product({
         /* @__PURE__ */ jsx$1("p", { css: productNameLayout, children: name }),
         /* @__PURE__ */ jsx$1("p", { css: priceLayout, children: price })
       ] }),
-      isSelected ? removeProduct() : addProduct()
+      isSelected ? RemoveFromCartButton() : AddToCartButton()
     ] })
   ] });
 }
@@ -9121,7 +9123,7 @@ const ProductContainerLayout = css`
 function ProductContainer({
   products,
   cartItemList,
-  onChange
+  updateCardItemList
 }) {
   return /* @__PURE__ */ jsx$1("div", { css: ProductContainerLayout, children: products.map((product) => {
     const selectedCardItems = cartItemList.filter(
@@ -9134,12 +9136,64 @@ function ProductContainer({
         imageUrl: product.imageUrl,
         name: product.name,
         price: product.price,
-        selectedCardItems,
-        onChange
+        selectedCartItems: selectedCardItems,
+        onChange: updateCardItemList
       }
     );
   }) });
 }
+const DropDownIcon = css`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 16px;
+`;
+const DropDownOptions = css`
+  font-family: Inter;
+  font-weight: 400;
+  font-size: 10.63px;
+  color: #4f4f4f;
+  padding: 8px;
+
+  &:hover,
+  &:focus {
+    background-color: #f3f3f3;
+    cursor: pointer;
+    outline: none;
+  }
+`;
+const DropDownDefault = (isOpen) => {
+  const borderColor = isOpen ? "#000" : "#acacac";
+  const color = "#000";
+  return css`
+    display: flex;
+    background-color: white;
+    padding: 10px;
+    width: 100%;
+    border: 1px solid #acacac;
+    border-color: ${borderColor};
+    color: ${color};
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-family: Inter;
+    font-weight: 400;
+    font-size: 10px;
+  `;
+};
+const DropDownContainer = css`
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  top: 36px;
+  border: 1px solid #acacac;
+  border-radius: 5px;
+  background-color: white;
+  list-style-type: none;
+`;
+const SelectorContainer = css`
+  position: relative;
+`;
 function Selector({
   dropDownOptions,
   placeholder,
@@ -9205,58 +9259,6 @@ function Selector({
     )) })
   ] });
 }
-const DropDownIcon = css`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 16px;
-`;
-const DropDownOptions = css`
-  font-family: Inter;
-  font-weight: 400;
-  font-size: 10.63px;
-  color: #4f4f4f;
-  padding: 8px;
-
-  &:hover,
-  &:focus {
-    background-color: #f3f3f3;
-    cursor: pointer;
-    outline: none;
-  }
-`;
-const DropDownDefault = (isOpen) => {
-  const borderColor = isOpen ? "#000" : "#acacac";
-  const color = "#000";
-  return css`
-    display: flex;
-    background-color: white;
-    padding: 10px;
-    width: 100%;
-    border: 1px solid #acacac;
-    border-color: ${borderColor};
-    color: ${color};
-    box-sizing: border-box;
-    border-radius: 4px;
-    font-family: Inter;
-    font-weight: 400;
-    font-size: 10px;
-  `;
-};
-const DropDownContainer = css`
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  top: 36px;
-  border: 1px solid #acacac;
-  border-radius: 5px;
-  background-color: white;
-  list-style-type: none;
-`;
-const SelectorContainer = css`
-  position: relative;
-`;
 const titleContainerLayout = css`
   display: flex;
   flex-direction: column;
@@ -9335,19 +9337,32 @@ const loadingLayout = css`
   font-size: 30px;
   font-weight: 500;
 `;
+const bodyLayout = css`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 25px;
+  box-sizing: border-box;
+  gap: 28px;
+  min-height: 100vh;
+`;
+function Main({ children }) {
+  return /* @__PURE__ */ jsx$1("main", { css: bodyLayout, children });
+}
 function ShopPage() {
   const [categoryValue, setCategoryValue] = reactExports.useState("전체");
   const [filterValue, setFilterValue] = reactExports.useState("낮은 가격순");
   const [productList, setProductList] = reactExports.useState([]);
   const [cartItemList, setCartItemList] = reactExports.useState([]);
   const [isError, setIsError] = reactExports.useState(false);
-  const selectedProducts = cartItemList.length;
+  const [isLoading, setIsLoading] = reactExports.useState(true);
+  const selectedProductCount = cartItemList.length;
   const dropdownOptions = ["전체", "식료품", "패션잡화"];
   const filterOptions = ["낮은 가격순", "높은 가격순"];
   const updateCardItemList = async () => {
     (async () => {
       try {
-        const response = await getCartItem({
+        const response = await getCartItems({
           sortBy: "asc"
         });
         setCartItemList(response.content);
@@ -9357,26 +9372,26 @@ function ShopPage() {
     })();
   };
   reactExports.useEffect(() => {
-    let sortByFilter = "price,asc";
-    if (filterValue === "높은 가격순")
-      sortByFilter = "price,desc";
+    setIsLoading(true);
     (async () => {
       try {
-        const response = await getProduct({
+        const response = await getProducts({
           category: categoryValue,
-          sortBy: sortByFilter
+          sortBy: filterValue === "높은 가격순" ? "price,desc" : "price,asc"
         });
         setProductList(response.content);
       } catch (e2) {
         setIsError(true);
       }
     })();
+    setIsLoading(false);
   }, [filterValue, categoryValue]);
   reactExports.useEffect(() => {
     updateCardItemList();
   }, []);
   return /* @__PURE__ */ jsxs("div", { css: pageLayout, children: [
-    /* @__PURE__ */ jsxs(Header, { title: "SHOP", children: [
+    /* @__PURE__ */ jsxs(Header, { children: [
+      /* @__PURE__ */ jsx$1("p", { children: "SHOP" }),
       /* @__PURE__ */ jsxs("div", { css: cartIconContainer, children: [
         /* @__PURE__ */ jsx$1(
           "img",
@@ -9389,11 +9404,15 @@ function ShopPage() {
             }
           }
         ),
-        selectedProducts !== 0 && /* @__PURE__ */ jsx$1("div", { "data-testid": "cart-count", css: cartItemCount, children: selectedProducts })
+        selectedProductCount !== 0 && /* @__PURE__ */ jsx$1("div", { "data-testid": "cart-count", css: cartItemCount, children: selectedProductCount })
       ] }),
       isError && /* @__PURE__ */ jsx$1(Toast, { children: "오류가 발생했습니다. 잠시 후 다시 시도해 주세요." })
     ] }),
-    /* @__PURE__ */ jsx$1(Body, { children: productList.length !== 0 ? /* @__PURE__ */ jsxs(Fragment, { children: [
+    /* @__PURE__ */ jsx$1(Main, { children: isError ? /* @__PURE__ */ jsxs("div", { css: loadingLayout, children: [
+      "데이터를 가져오는데 실패했습니다. ",
+      /* @__PURE__ */ jsx$1("br", {}),
+      " 다시 시도해주세요"
+    ] }) : isLoading ? /* @__PURE__ */ jsx$1("div", { css: loadingLayout, children: "로딩중입니다" }) : productList.length === 0 ? /* @__PURE__ */ jsx$1("div", { css: loadingLayout, children: "상품목록에 상품이 없습니다." }) : /* @__PURE__ */ jsxs(Fragment, { children: [
       /* @__PURE__ */ jsx$1(TitleContainer, { title: "bpple 상품 목록", children: /* @__PURE__ */ jsxs("div", { css: selectorBoxLayout, children: [
         /* @__PURE__ */ jsx$1(
           Selector,
@@ -9417,10 +9436,10 @@ function ShopPage() {
         {
           products: productList,
           cartItemList,
-          onChange: updateCardItemList
+          updateCardItemList
         }
       )
-    ] }) : /* @__PURE__ */ jsx$1("div", { css: loadingLayout, children: "로딩중입니다" }) })
+    ] }) })
   ] });
 }
 const reset = css`
@@ -9565,10 +9584,19 @@ const reset = css`
 `;
 const GlobalStyle = () => /* @__PURE__ */ jsx$1(Global, { styles: reset });
 function App() {
-  return /* @__PURE__ */ jsxs("div", { children: [
-    /* @__PURE__ */ jsx$1(GlobalStyle, {}),
-    /* @__PURE__ */ jsx$1(ShopPage, {})
-  ] });
+  return /* @__PURE__ */ jsxs(
+    "div",
+    {
+      css: css`
+        display: flex;
+        justify-content: center;
+      `,
+      children: [
+        /* @__PURE__ */ jsx$1(GlobalStyle, {}),
+        /* @__PURE__ */ jsx$1(ShopPage, {})
+      ]
+    }
+  );
 }
 client.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsx$1(React.StrictMode, { children: /* @__PURE__ */ jsx$1(App, {}) })
