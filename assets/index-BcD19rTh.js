@@ -8913,11 +8913,7 @@ function css() {
   }
   return serializeStyles(args);
 }
-const getRequestOptions = ({
-  method,
-  withAuth = false,
-  body
-}) => {
+const getRequestOptions = (method, body, withAuth) => {
   const headers = {
     "Content-Type": "application/json"
   };
@@ -8931,53 +8927,70 @@ const getRequestOptions = ({
     options.body = JSON.stringify(body);
   return options;
 };
+const tryFetch = async (fetchFunction) => {
+  try {
+    const response = await fetchFunction();
+    if (!response.ok) {
+      throw new Error(`API 통신 실패: ${response.status}`);
+    }
+    return response;
+  } catch (error) {
+    console.error("`API 통신 중 오류 발생:", error);
+    throw error;
+  }
+};
+const apiClient = {
+  get: (url, withAuth = true) => tryFetch(
+    () => fetch(
+      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}${url}`,
+      getRequestOptions("GET", void 0, withAuth)
+    )
+  ),
+  post: (url, body, withAuth = true) => tryFetch(
+    () => fetch(
+      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}${url}`,
+      getRequestOptions("POST", body, withAuth)
+    )
+  ),
+  delete: (url, withAuth = true) => tryFetch(
+    () => fetch(
+      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}${url}`,
+      getRequestOptions("DELETE", void 0, withAuth)
+    )
+  )
+};
 async function getCartItems({ sortBy }) {
-  const options = getRequestOptions({ method: "GET", withAuth: true });
   const params = new URLSearchParams({
     page: "0",
     size: "50",
     sort: sortBy
   });
-  return fetch(
-    `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items?${params.toString()}`,
-    options
-  ).then((res) => res.json());
+  return apiClient.get(`/cart-items?${params.toString()}`).then((res) => res.json());
 }
 async function postCartItem({
   productId,
   quantity
 }) {
-  const options = getRequestOptions({
-    method: "POST",
-    body: {
-      productId,
-      quantity
-    },
-    withAuth: true
+  return apiClient.post(`/cart-items`, {
+    productId,
+    quantity
   });
-  return fetch(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items`, options);
 }
 async function deleteCartItem({ id: id2 }) {
-  const options = getRequestOptions({
-    method: "DELETE",
-    withAuth: true
-  });
-  return fetch(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items/${id2}`, options);
+  return apiClient.delete(`/cart-items/${id2}`);
 }
 async function getProducts({
   sortBy,
   category
 }) {
-  const options = getRequestOptions({ method: "GET" });
   const params = new URLSearchParams({
     page: "0",
     size: "20",
     sort: sortBy
   });
   const categoryParams = new URLSearchParams({ category });
-  return fetch(
-    `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/products?${category !== "전체" && `${categoryParams.toString()}&&`}${params.toString()}`,
-    options
+  return apiClient.get(
+    `/products?${category !== "전체" && `${categoryParams.toString()}&&`}${params.toString()}`
   ).then((res) => res.json());
 }
 const headerLayout = css`
@@ -9104,7 +9117,7 @@ function Product({
       /* @__PURE__ */ jsx$1("p", { children: "빼기" })
     ] });
   };
-  return /* @__PURE__ */ jsxs("div", { id: id2, css: productLayout, children: [
+  return /* @__PURE__ */ jsxs("div", { id: id2.toString(), css: productLayout, children: [
     /* @__PURE__ */ jsx$1("img", { css: imgLayout, src: imageUrl ?? "./default-img.png" }),
     /* @__PURE__ */ jsxs("div", { css: contentLayout, children: [
       /* @__PURE__ */ jsxs("div", { css: descriptionLayout, children: [
@@ -9123,7 +9136,7 @@ const ProductContainerLayout = css`
 function ProductContainer({
   products,
   cartItemList,
-  updateCardItemList
+  onChange
 }) {
   return /* @__PURE__ */ jsx$1("div", { css: ProductContainerLayout, children: products.map((product) => {
     const selectedCardItems = cartItemList.filter(
@@ -9137,8 +9150,9 @@ function ProductContainer({
         name: product.name,
         price: product.price,
         selectedCartItems: selectedCardItems,
-        onChange: updateCardItemList
-      }
+        onChange
+      },
+      product.id
     );
   }) });
 }
@@ -9349,6 +9363,8 @@ const bodyLayout = css`
 function Main({ children }) {
   return /* @__PURE__ */ jsx$1("main", { css: bodyLayout, children });
 }
+const dropdownOptions = ["전체", "식료품", "패션잡화"];
+const filterOptions = ["낮은 가격순", "높은 가격순"];
 function ShopPage() {
   const [categoryValue, setCategoryValue] = reactExports.useState("전체");
   const [filterValue, setFilterValue] = reactExports.useState("낮은 가격순");
@@ -9357,8 +9373,6 @@ function ShopPage() {
   const [isError, setIsError] = reactExports.useState(false);
   const [isLoading, setIsLoading] = reactExports.useState(true);
   const selectedProductCount = cartItemList.length;
-  const dropdownOptions = ["전체", "식료품", "패션잡화"];
-  const filterOptions = ["낮은 가격순", "높은 가격순"];
   const updateCardItemList = async () => {
     (async () => {
       try {
@@ -9380,11 +9394,12 @@ function ShopPage() {
           sortBy: filterValue === "높은 가격순" ? "price,desc" : "price,asc"
         });
         setProductList(response.content);
+        setIsLoading(false);
       } catch (e2) {
         setIsError(true);
+        setIsLoading(false);
       }
     })();
-    setIsLoading(false);
   }, [filterValue, categoryValue]);
   reactExports.useEffect(() => {
     updateCardItemList();
@@ -9436,7 +9451,7 @@ function ShopPage() {
         {
           products: productList,
           cartItemList,
-          updateCardItemList
+          onChange: updateCardItemList
         }
       )
     ] }) })
