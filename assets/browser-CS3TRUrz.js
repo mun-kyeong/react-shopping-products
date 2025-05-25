@@ -18682,7 +18682,7 @@ const mockProductResponse = {
   ]
 };
 const productHandlers = [
-  http.get(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/products`, ({ request }) => {
+  http.get(`${""}/products`, ({ request }) => {
     const url = new URL(request.url);
     const sort = url.searchParams.get("sort");
     const category = url.searchParams.get("category");
@@ -18708,7 +18708,7 @@ const productHandlers = [
       size
     });
   }),
-  http.get(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/products/:id`, ({ params }) => {
+  http.get(`${""}/products/:id`, ({ params }) => {
     const { id } = params;
     return HttpResponse.json(
       mockProductResponse.content.find((product) => product.id === Number(id))
@@ -18788,14 +18788,14 @@ function createCartHandlers() {
     );
   };
   const cartHandlers2 = [
-    http.get(`${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items`, () => {
+    http.get(`${""}/cart-items`, () => {
       return HttpResponse.json({
         ...mockCartItemResponse,
         content: cartItems
       });
     }),
     http.post(
-      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items`,
+      `${""}/cart-items`,
       async ({ request }) => {
         const { productId, quantity } = await request.json();
         const product = findProductById(productId);
@@ -18823,7 +18823,7 @@ function createCartHandlers() {
       }
     ),
     http.delete(
-      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items/:id`,
+      `${""}/cart-items/:id`,
       ({ params }) => {
         const id = Number(params.id);
         cartItems = cartItems.filter((item) => item.id !== id);
@@ -18831,7 +18831,7 @@ function createCartHandlers() {
       }
     ),
     http.patch(
-      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}/cart-items/:id`,
+      `${""}/cart-items/:id`,
       async ({ params, request }) => {
         const id = Number(params.id);
         const { quantity } = await request.json();

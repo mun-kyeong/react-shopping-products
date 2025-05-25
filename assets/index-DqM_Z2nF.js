@@ -8755,25 +8755,25 @@ const tryFetch = async (fetchFunction) => {
 const apiClient = {
   get: (url, withAuth = true) => tryFetch(
     () => fetch(
-      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}${url}`,
+      `${""}${url}`,
       getRequestOptions("GET", void 0, withAuth)
     )
   ),
   post: (url, body, withAuth = true) => tryFetch(
     () => fetch(
-      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}${url}`,
+      `${""}${url}`,
       getRequestOptions("POST", body, withAuth)
     )
   ),
   delete: (url, withAuth = true) => tryFetch(
     () => fetch(
-      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}${url}`,
+      `${""}${url}`,
       getRequestOptions("DELETE", void 0, withAuth)
     )
   ),
   put: (url, body, withAuth = true) => tryFetch(
     () => fetch(
-      `${"http://techcourse-lv2-alb-974870821.ap-northeast-2.elb.amazonaws.com"}${url}`,
+      `${""}${url}`,
       getRequestOptions("PATCH", body, withAuth)
     )
   )
@@ -9638,7 +9638,7 @@ function App() {
 async function enableMocks() {
   {
     const { worker } = await __vitePreload(async () => {
-      const { worker: worker2 } = await import("./browser-DGFareed.js");
+      const { worker: worker2 } = await import("./browser-CS3TRUrz.js");
       return { worker: worker2 };
     }, true ? [] : void 0);
     await worker.start({
