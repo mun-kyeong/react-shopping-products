@@ -18767,6 +18767,7 @@ const mockCartItemResponse = {
   empty: false
 };
 const products = structuredClone(mockProductResponse.content);
+const DEFAULT_STOCK_QUANTITY = 1e4;
 function createCartHandlers() {
   let cartItems = JSON.parse(
     JSON.stringify(mockCartItemResponse.content)
@@ -18805,7 +18806,7 @@ function createCartHandlers() {
             "존재하지 않는 상품입니다.",
             404
           );
-        if (((product == null ? void 0 : product.quantity) ?? 1e4) < quantity) {
+        if (((product == null ? void 0 : product.quantity) ?? DEFAULT_STOCK_QUANTITY) < quantity) {
           return errorResponse(
             "OUT_OF_STOCK",
             "재고 수량을 초과하여 담을 수 없습니다.",
@@ -18846,7 +18847,7 @@ function createCartHandlers() {
         if (quantity === 0) {
           cartItems = cartItems.filter((item2) => item2.id !== id);
         }
-        if (((product == null ? void 0 : product.quantity) ?? 1e4) < quantity) {
+        if (((product == null ? void 0 : product.quantity) ?? DEFAULT_STOCK_QUANTITY) < quantity) {
           return errorResponse(
             "OUT_OF_STOCK",
             "재고 수량을 초과하여 담을 수 없습니다.",
