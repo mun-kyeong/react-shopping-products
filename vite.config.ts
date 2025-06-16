@@ -1,7 +1,19 @@
-import { defineConfig } from "vite";
+/// <reference types="vitest" />
 import react from "@vitejs/plugin-react-swc";
+import { defineConfig } from "vite";
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(() => {
+  return {
+    base: "/react-shopping-products/",
+    plugins: [
+      react({
+        jsxImportSource: "@emotion/react",
+      }),
+    ],
+    test: {
+      globals: true,
+      environment: "jsdom",
+      setupFiles: "./src/setupTest.ts",
+    },
+  };
 });

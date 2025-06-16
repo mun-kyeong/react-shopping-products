@@ -1,12 +1,23 @@
-import { useState } from "react";
+import { css } from "@emotion/react";
+import ShopPage from "./domains/ShoppingProducts/page";
+import GlobalStyle from "./GlobalStyle";
+import { ShoppingProvider } from "./domains/ShoppingProducts/context/ShoppingProvider";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <>
-      <h1>React Shopping Products</h1>
-    </>
+    <ShoppingProvider>
+      <div
+        css={css`
+          display: flex;
+          justify-content: center;
+          height: 100vh;
+          background-color: aliceblue;
+        `}
+      >
+        <GlobalStyle />
+        <ShopPage />
+      </div>
+    </ShoppingProvider>
   );
 }
 
